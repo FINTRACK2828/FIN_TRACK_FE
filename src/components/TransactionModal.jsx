@@ -2,23 +2,21 @@
 
 import React, { useState } from 'react';
 import { X, PlusCircle, Check, IndianRupee } from 'lucide-react';
-import {
-  INCOME_CATEGORIES,
-  EXPENSE_CATEGORIES,
-  PAYMENT_METHODS,
-} from '@/data/mockData';
+
 
 export default function TransactionModal({
   isOpen,
   onClose,
   onSave,
   initialData = null,
+  categories = [],
 }) {
   if (!isOpen) return null;
 
   return (
     <TransactionModalDialog
       key={initialData?.id || 'new-tx'}
+      categories={categories}
       onClose={onClose}
       onSave={onSave}
       initialData={initialData}
@@ -26,15 +24,15 @@ export default function TransactionModal({
   );
 }
 
-function TransactionModalDialog({ onClose, onSave, initialData }) {
+function TransactionModalDialog({ onClose, onSave, initialData, categories }) {
+  const INCOME_CATEGORIES = categories.filter(c => c.type === 'income').map(c => c.name);
+  const EXPENSE_CATEGORIES = categories.filter(c => c.type === 'expense').map(c => c.name);
   const [formData, setFormData] = useState(() => ({
     title: initialData?.title || '',
     amount: initialData?.amount || '',
     type: initialData?.type || 'expense',
     category: initialData?.category || (initialData?.type === 'income' ? INCOME_CATEGORIES[0] : EXPENSE_CATEGORIES[0]),
     date: initialData?.date || (typeof window !== 'undefined' ? new Date().toISOString().split('T')[0] : '2026-10-11'),
-    paymentMethod: initialData?.paymentMethod || 'UPI (GPay / PhonePe)',
-    notes: initialData?.notes || '',
   }));
 
   const [errors, setErrors] = useState({});
@@ -60,7 +58,7 @@ function TransactionModalDialog({ onClose, onSave, initialData }) {
     return errs;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
@@ -68,13 +66,13 @@ function TransactionModalDialog({ onClose, onSave, initialData }) {
       return;
     }
 
-    onSave({
+    const saved = await onSave({
       ...formData,
       amount: Number(formData.amount),
       id: initialData?.id || `tx-${Date.now()}`,
       status: 'Completed',
     });
-    onClose();
+    if (saved) onClose();
   };
 
   return (
@@ -141,9 +139,8 @@ function TransactionModalDialog({ onClose, onSave, initialData }) {
                 ₹
               </span>
               <input
-                type="number"
-                step="any"
-                min="1"
+                type="number" step="0.01"
+                min="0.01"
                 placeholder="0.00"
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
@@ -191,22 +188,7 @@ function TransactionModalDialog({ onClose, onSave, initialData }) {
               </select>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                Payment Method
-              </label>
-              <select
-                value={formData.paymentMethod}
-                onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                className="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-              >
-                {PAYMENT_METHODS.map((pm) => (
-                  <option key={pm} value={pm}>
-                    {pm}
-                  </option>
-                ))}
-              </select>
-            </div>
+
           </div>
 
           {/* Date */}
@@ -221,20 +203,6 @@ function TransactionModalDialog({ onClose, onSave, initialData }) {
               className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
             />
             {errors.date && <p className="text-xs text-rose-500 mt-1">{errors.date}</p>}
-          </div>
-
-          {/* Optional Notes */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-              Notes (Optional)
-            </label>
-            <textarea
-              rows={2}
-              placeholder="Add optional context or reference number..."
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-            />
           </div>
 
           {/* Actions */}

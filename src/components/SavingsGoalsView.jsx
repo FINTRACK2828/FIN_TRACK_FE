@@ -55,29 +55,30 @@ export default function SavingsGoalsView({
     setDepositAmount('');
   };
 
-  const handleDepositSubmit = (e) => {
+  const handleDepositSubmit = async (e) => {
     e.preventDefault();
     if (!depositAmount || Number(depositAmount) <= 0 || !contributeGoal) return;
-    onContributeFunds(contributeGoal.id, Number(depositAmount));
+    if (!await onContributeFunds(contributeGoal.id, Number(depositAmount))) return;
     setContributeGoal(null);
     setDepositAmount('');
   };
 
-  const handleCreateGoal = (e) => {
+  const handleCreateGoal = async (e) => {
     e.preventDefault();
     if (!newGoalForm.title || !newGoalForm.targetAmount) return;
 
-    onAddGoal({
+    const saved = await onAddGoal({
       id: `sg-${Date.now()}`,
       title: newGoalForm.title,
       targetAmount: Number(newGoalForm.targetAmount),
       currentAmount: Number(newGoalForm.currentAmount || 0),
-      deadline: newGoalForm.deadline || '2027-12-31',
+      deadline: newGoalForm.deadline || null,
       category: newGoalForm.category,
       notes: newGoalForm.notes || '',
       color: 'emerald',
     });
 
+    if (!saved) return;
     setNewGoalForm({
       title: '',
       targetAmount: '',
@@ -255,8 +256,8 @@ export default function SavingsGoalsView({
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
                   <input
-                    type="number"
-                    min="100"
+                    type="number" step="0.01"
+                    min="0.01"
                     placeholder="e.g. 5000"
                     value={depositAmount}
                     onChange={(e) => setDepositAmount(e.target.value)}
@@ -336,8 +337,8 @@ export default function SavingsGoalsView({
                     Target (₹) *
                   </label>
                   <input
-                    type="number"
-                    min="1000"
+                    type="number" step="0.01"
+                    min="0.01"
                     placeholder="300000"
                     value={newGoalForm.targetAmount}
                     onChange={(e) => setNewGoalForm({ ...newGoalForm, targetAmount: e.target.value })}
@@ -350,7 +351,7 @@ export default function SavingsGoalsView({
                     Current Saved (₹)
                   </label>
                   <input
-                    type="number"
+                    type="number" step="0.01"
                     min="0"
                     placeholder="0"
                     value={newGoalForm.currentAmount}
@@ -361,22 +362,6 @@ export default function SavingsGoalsView({
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Category
-                  </label>
-                  <select
-                    value={newGoalForm.category}
-                    onChange={(e) => setNewGoalForm({ ...newGoalForm, category: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500"
-                  >
-                    <option value="Emergency">Emergency</option>
-                    <option value="Vehicle">Vehicle</option>
-                    <option value="Travel">Travel</option>
-                    <option value="Investment">Investment</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     Target Date

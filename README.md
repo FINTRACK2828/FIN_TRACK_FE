@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# FinTrack frontend
 
-## Getting Started
+Next.js frontend for the sibling Express/PostgreSQL project at
+`C:\FinTrack\Fin_Track_Backend\fintrack-backend`.
 
-First, run the development server:
+## Run locally
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+1. Initialize and start PostgreSQL using the backend README. The backend checks
+   database connectivity before opening its HTTP port.
+2. Start the backend in a separate PowerShell terminal:
+
+   ```powershell
+   cd C:\FinTrack\Fin_Track_Backend\fintrack-backend
+   $env:PORT='5001'
+   npm start
+   ```
+
+3. Start the frontend:
+
+   ```powershell
+   cd C:\FinTrack\Fin_Track_Frontend\fintrack-frontend
+   npm ci
+   Copy-Item .env.example .env.local
+   npm run dev -- --port 3001
+   ```
+
+4. Open http://localhost:3001 and register an account. Old browser demo accounts
+   are not backend accounts; they must be registered separately. Existing browser
+   finance data is not automatically imported.
+
+Port 5001 avoids the unrelated application currently occupying port 5000.
+`BACKEND_URL` in `.env.local` points to the API server without the `/api` suffix.
+Restart Next.js after changing it. The frontend sends requests through
+`/api/backend/*`; Next.js proxies these to `${BACKEND_URL}/api/*`, so the browser
+does not need a separate CORS connection. For deployment set `BACKEND_URL` to the
+backend address reachable from the Next.js server. Run this as a Next.js server,
+not a static export.
+
+## Connected features
+
+- Registration, login, JWT authentication, logout and expired-session handling.
+- Remember-me stores the session across browser restarts; unchecked uses session
+  storage. Passwords are never saved in browser storage.
+- All transaction pages, create/edit/delete, and backend category selections.
+- Current-month budgets, savings goals, contributions, recurring bills and
+  current-year monthly chart data.
+- Name/email profile updates and server data refresh.
+- Password recovery emails and `/reset-password?token=...`. Configure SMTP and
+  `PASSWORD_RESET_URL=http://localhost:3001/reset-password` in the backend.
+
+Writes update the display after the server confirms them. Backend errors appear
+in the forms or dashboard. Recurring controls pause/resume the backend reminder;
+the API does not support marking a billing cycle paid. Unsupported demo inputs
+for payment methods, bill providers, auto-pay and profile preferences were removed.
+
+## Checks
+
+```powershell
+npm test
+npm run lint
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The API tests verify authentication, expiry, failures, pagination and request/response
+mapping using a mocked HTTP transport. Live data requires a working PostgreSQL
+database and the running FinTrack API. To diagnose startup, check
+`http://localhost:5001/health`; FinTrack returns `success: true` and database health.

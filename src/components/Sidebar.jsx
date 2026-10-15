@@ -171,15 +171,15 @@ export default function Sidebar({
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Health Score: 94/100</span>
+            <span>Your finance records</span>
           </div>
-          <span className="text-[10px] text-slate-400">Oct 2026</span>
+          <span className="text-[10px] text-slate-400">{new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</span>
         </div>
         <p className="text-xs text-slate-300 mb-2 leading-relaxed">
-          Savings rate is <strong>+24%</strong> higher than typical target.
+          Review your saved income, expenses, budgets and savings goals.
         </p>
         <div className="w-full h-1.5 bg-slate-700/80 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 w-[94%]" />
+          <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 w-full" />
         </div>
       </div>
 

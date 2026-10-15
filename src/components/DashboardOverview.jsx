@@ -47,7 +47,7 @@ export default function DashboardOverview({
   const savingsRate = totalIncome > 0 ? Math.round((netSavings / totalIncome) * 100) : 0;
   
   // Base bank balance + net savings
-  const totalLiquidBalance = 363348 + netSavings;
+  const totalLiquidBalance = netSavings;
 
   // Recent 5 transactions
   const recentTransactions = [...transactions]
@@ -56,7 +56,7 @@ export default function DashboardOverview({
 
   // Upcoming bills (filter out paid ones)
   const upcomingBills = recurringBills
-    .filter((b) => b.status !== 'Paid')
+    .filter((b) => b.active)
     .slice(0, 3);
 
   // Top 3 savings goals
@@ -76,13 +76,13 @@ export default function DashboardOverview({
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold mb-3 border border-emerald-500/30">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Oct 2026 Financial Health: Excellent</span>
+              <span>Your financial overview</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               Welcome back, <span className="text-emerald-400">{displayName}!</span>
             </h2>
             <p className="text-slate-300 text-sm mt-1 max-w-xl leading-relaxed">
-              You&apos;ve saved <strong className="text-white">{formatINR(netSavings)}</strong> this month ({savingsRate}% savings rate).
+              You&apos;ve saved <strong className="text-white">{formatINR(netSavings)}</strong> across your recorded transactions ({savingsRate}% savings rate).
               Keep up the momentum towards your wealth goals.
             </p>
           </div>
@@ -373,7 +373,7 @@ export default function DashboardOverview({
             <div className="space-y-3">
               {upcomingBills.length === 0 ? (
                 <div className="p-4 text-center text-slate-400 text-xs">
-                  All upcoming bills paid for this cycle!
+                  No active recurring bills.
                 </div>
               ) : (
                 upcomingBills.map((bill) => {
@@ -405,7 +405,7 @@ export default function DashboardOverview({
                           onClick={() => onQuickPayBill(bill)}
                           className="mt-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors"
                         >
-                          Mark Paid
+                          Pause
                         </button>
                       </div>
                     </div>

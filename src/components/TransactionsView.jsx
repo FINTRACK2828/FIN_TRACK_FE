@@ -15,10 +15,10 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { formatINR, formatDate, getCategoryStyle } from '@/lib/utils';
-import { INCOME_CATEGORIES, EXPENSE_CATEGORIES } from '@/data/mockData';
 
 export default function TransactionsView({
   transactions = [],
+  categories = [],
   onOpenNewTransaction,
   onEditTransaction,
   onDeleteTransaction,
@@ -31,8 +31,8 @@ export default function TransactionsView({
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const allCategories = useMemo(() => {
-    return Array.from(new Set([...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES]));
-  }, []);
+    return Array.from(new Set(categories.map(c => c.name)));
+  }, [categories]);
 
   // Filtered and sorted transactions
   const filteredTransactions = useMemo(() => {

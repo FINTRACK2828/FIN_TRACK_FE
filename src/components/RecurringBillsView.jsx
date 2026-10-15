@@ -15,14 +15,15 @@ import {
   IndianRupee,
 } from 'lucide-react';
 import { formatINR, formatDate, getRelativeDueDate } from '@/lib/utils';
-import { EXPENSE_CATEGORIES } from '@/data/mockData';
 
 export default function RecurringBillsView({
+  categories = [],
   recurringBills = [],
   onAddRecurringBill,
   onToggleBillStatus,
   onDeleteRecurringBill,
 }) {
+  const EXPENSE_CATEGORIES = categories.filter(c => c.type === 'expense').map(c => c.name);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [billForm, setBillForm] = useState({
     title: '',
@@ -30,7 +31,7 @@ export default function RecurringBillsView({
     amount: '',
     billingCycle: 'Monthly',
     dueDate: '',
-    category: 'Utilities & Bills',
+    category: EXPENSE_CATEGORIES[0] || '',
     autoPay: true,
   });
 
@@ -39,16 +40,16 @@ export default function RecurringBillsView({
     0
   );
 
-  const pendingBills = recurringBills.filter((b) => b.status !== 'Paid');
-  const paidBills = recurringBills.filter((b) => b.status === 'Paid');
+  const pendingBills = recurringBills.filter((b) => b.active);
+  const paidBills = recurringBills.filter((b) => !b.active);
 
   const pendingAmount = pendingBills.reduce((sum, b) => sum + Number(b.amount), 0);
 
-  const handleCreateBill = (e) => {
+  const handleCreateBill = async (e) => {
     e.preventDefault();
     if (!billForm.title || !billForm.amount || !billForm.dueDate) return;
 
-    onAddRecurringBill({
+    const saved = await onAddRecurringBill({
       id: `rec-${Date.now()}`,
       title: billForm.title,
       provider: billForm.provider || billForm.title,
@@ -60,13 +61,14 @@ export default function RecurringBillsView({
       status: 'Upcoming',
     });
 
+    if (!saved) return;
     setBillForm({
       title: '',
       provider: '',
       amount: '',
       billingCycle: 'Monthly',
       dueDate: '',
-      category: 'Utilities & Bills',
+      category: EXPENSE_CATEGORIES[0] || '',
       autoPay: true,
     });
     setIsModalOpen(false);
@@ -110,14 +112,14 @@ export default function RecurringBillsView({
           <div className="flex items-center gap-2 text-slate-500 mb-1">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             <span className="text-xs font-semibold uppercase tracking-wider">
-              Settled / Paid
+              Paused Bills
             </span>
           </div>
           <p className="text-2xl font-extrabold text-emerald-600 tabular-nums">
-            {paidBills.length} Paid
+            {paidBills.length} Paused
           </p>
           <p className="text-[11px] text-slate-400 mt-1">
-            Auto-debits verified this month
+            Recurring reminders currently paused
           </p>
         </div>
       </div>
@@ -149,7 +151,7 @@ export default function RecurringBillsView({
         {/* Bills List */}
         <div className="divide-y divide-slate-100">
           {recurringBills.map((bill) => {
-            const isPaid = bill.status === 'Paid';
+            const isPaid = !bill.active;
             const relative = getRelativeDueDate(bill.dueDate);
 
             return (
@@ -209,7 +211,7 @@ export default function RecurringBillsView({
                           : 'bg-slate-100 text-slate-600'
                       }`}
                     >
-                      {isPaid ? 'Settled for Oct' : relative.text}
+                      {isPaid ? 'Paused' : relative.text}
                     </span>
                   </div>
 
@@ -222,7 +224,7 @@ export default function RecurringBillsView({
                           : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
                       }`}
                     >
-                      {isPaid ? 'Undo Paid' : 'Mark Paid'}
+                      {isPaid ? 'Resume' : 'Pause'}
                     </button>
 
                     <button
@@ -269,27 +271,14 @@ export default function RecurringBillsView({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Provider / Vendor Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Reliance Jio, Groww, HDFC"
-                  value={billForm.provider}
-                  onChange={(e) => setBillForm({ ...billForm, provider: e.target.value })}
-                  className="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500"
-                />
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     Amount (₹) *
                   </label>
                   <input
-                    type="number"
-                    min="1"
+                    type="number" step="0.01"
+                    min="0.01"
                     placeholder="1500"
                     value={billForm.amount}
                     onChange={(e) => setBillForm({ ...billForm, amount: e.target.value })}
@@ -307,7 +296,7 @@ export default function RecurringBillsView({
                     className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500"
                   >
                     <option value="Monthly">Monthly</option>
-                    <option value="Quarterly">Quarterly</option>
+                    <option value="Daily">Daily</option>
                     <option value="Yearly">Yearly</option>
                     <option value="Weekly">Weekly</option>
                   </select>
@@ -343,19 +332,6 @@ export default function RecurringBillsView({
                     ))}
                   </select>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="autopay"
-                  checked={billForm.autoPay}
-                  onChange={(e) => setBillForm({ ...billForm, autoPay: e.target.checked })}
-                  className="w-4 h-4 text-emerald-600 rounded-sm focus:ring-emerald-500 border-slate-300"
-                />
-                <label htmlFor="autopay" className="text-xs font-medium text-slate-700 cursor-pointer">
-                  Auto-Debit mandate configured on bank/card
-                </label>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-2">

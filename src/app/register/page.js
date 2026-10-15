@@ -51,8 +51,10 @@ export default function RegisterPage() {
 
     if (!formData.password) {
       errs.password = 'Password is required.';
-    } else if (formData.password.length < 6) {
-      errs.password = 'Password must be at least 6 characters.';
+    } else if (formData.password.length < 10) {
+      errs.password = 'Password must be at least 10 characters.';
+    } else if (new TextEncoder().encode(formData.password).length > 72) {
+      errs.password = 'Password must not exceed 72 UTF-8 bytes.';
     }
 
     if (!formData.confirmPassword) {
@@ -82,7 +84,7 @@ export default function RegisterPage() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
@@ -95,7 +97,7 @@ export default function RegisterPage() {
 
     try {
       const trimmedEmail = formData.email.trim();
-      const res = StorageService.registerUser({
+      const res = await StorageService.registerUser({
         name: formData.name.trim(),
         email: trimmedEmail,
         password: formData.password,
@@ -123,7 +125,7 @@ export default function RegisterPage() {
       }, 800);
     } catch (err) {
       console.error('Registration error:', err);
-      setErrors({ general: 'Failed to complete registration. Please try again.' });
+      setErrors({ general: err.message });
       setLoading(false);
     }
   };
@@ -175,7 +177,7 @@ export default function RegisterPage() {
                 <span>Account Created Successfully!</span>
               </div>
               <p className="text-emerald-700 leading-relaxed">
-                A personalized financial ledger has been initialized for <strong>{formData.name}</strong>.
+                Your account is ready for <strong>{formData.name}</strong>.
                 Redirecting to login...
               </p>
               <button
@@ -243,7 +245,7 @@ export default function RegisterPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="At least 6 characters"
+                    placeholder="At least 10 characters"
                     className={`w-full pl-10 pr-10 py-2.5 text-sm bg-slate-50 border rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30 text-slate-900 placeholder-slate-400 transition-all ${
                       errors.password ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-emerald-500'
                     }`}
@@ -326,7 +328,7 @@ export default function RegisterPage() {
 
         {/* Footer */}
         <p className="text-center text-[11px] text-slate-400 mt-6 max-w-sm mx-auto">
-          Demo data will be generated in localStorage and preserved across page reloads.
+          Your account and financial data are saved securely on the server.
         </p>
       </div>
     </div>

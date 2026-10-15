@@ -31,8 +31,15 @@ export default function ReportsView({
   const netSavings = totalIncome - totalExpense;
   const savingsRate = totalIncome > 0 ? ((netSavings / totalIncome) * 100).toFixed(1) : 0;
 
-  // Average daily spend for October (assuming 31 days)
-  const avgDailySpend = (totalExpense / 31).toFixed(0);
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+  const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+  const monthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}-`;
+  const currentMonthExpenses = transactions
+    .filter(t => t.type === 'expense' && t.date.startsWith(monthPrefix))
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+  const avgDailySpend = (currentMonthExpenses / daysInMonth).toFixed(0);
 
   // Group expenses by category
   const expensesByCategory = transactions
@@ -71,7 +78,7 @@ export default function ReportsView({
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Audited financial breakdown for <strong>{user?.name || 'Rahul Sharma'}</strong> (FY 2026-27).
+            Financial breakdown of all recorded transactions for <strong>{user?.name || 'Member'}</strong>.
           </p>
         </div>
 
@@ -216,7 +223,7 @@ export default function ReportsView({
           Historical Monthly Performance
         </h3>
         <p className="text-xs text-slate-500 mb-4">
-          Consecutive monthly tracking across the last two quarters
+          Monthly tracking for {monthlyData[0]?.year || currentYear}
         </p>
 
         <div className="overflow-x-auto">
@@ -235,7 +242,7 @@ export default function ReportsView({
                 const sRate = m.income > 0 ? Math.round((m.savings / m.income) * 100) : 0;
                 return (
                   <tr key={m.month} className="hover:bg-slate-50/80">
-                    <td className="py-3 px-3 font-bold text-slate-800">{m.month} 2026</td>
+                    <td className="py-3 px-3 font-bold text-slate-800">{m.month} {m.year || currentYear}</td>
                     <td className="py-3 px-3 text-right font-semibold text-emerald-600 tabular-nums">
                       +{formatINR(m.income)}
                     </td>

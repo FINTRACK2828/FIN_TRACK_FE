@@ -18,7 +18,6 @@ import {
   IndianRupee,
 } from 'lucide-react';
 import { formatINR } from '@/lib/utils';
-import { EXPENSE_CATEGORIES } from '@/data/mockData';
 
 const ICON_MAP = {
   'Housing & Rent': Home,
@@ -35,11 +34,12 @@ function generateBudgetId() {
 }
 
 export default function BudgetsView({
+  categories = [],
   budgets = [],
-  transactions = [],
   onUpdateBudget,
   onAddBudget,
 }) {
+  const EXPENSE_CATEGORIES = categories.filter(c => c.type === 'expense').map(c => c.name);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
   const [budgetForm, setBudgetForm] = useState({
@@ -47,13 +47,7 @@ export default function BudgetsView({
     allocated: '',
   });
 
-  // Calculate dynamic spent per category from actual transactions
-  const spentByCategory = transactions
-    .filter((t) => t.type === 'expense')
-    .reduce((acc, t) => {
-      acc[t.category] = (acc[t.category] || 0) + Number(t.amount);
-      return acc;
-    }, {});
+  const spentByCategory = Object.fromEntries(budgets.map(b => [b.category, b.spent]));
 
   // Compute live budget statistics
   const totalAllocated = budgets.reduce((sum, b) => sum + Number(b.allocated), 0);
@@ -83,23 +77,25 @@ export default function BudgetsView({
     setIsModalOpen(true);
   };
 
-  const handleSaveBudget = (e) => {
+  const handleSaveBudget = async (e) => {
     e.preventDefault();
     if (!budgetForm.allocated || Number(budgetForm.allocated) <= 0) return;
 
     if (editingBudget) {
-      onUpdateBudget({
+      const saved = await onUpdateBudget({
         ...editingBudget,
         allocated: Number(budgetForm.allocated),
       });
+      if (!saved) return;
     } else {
-      onAddBudget({
+      const saved = await onAddBudget({
         id: generateBudgetId(),
         category: budgetForm.category,
         allocated: Number(budgetForm.allocated),
         spent: spentByCategory[budgetForm.category] || 0,
         color: 'emerald',
       });
+      if (!saved) return;
     }
     setIsModalOpen(false);
   };
@@ -310,9 +306,8 @@ export default function BudgetsView({
                     ₹
                   </span>
                   <input
-                    type="number"
-                    min="500"
-                    step="500"
+                    type="number" step="0.01"
+                    min="0.01"
                     placeholder="e.g. 15000"
                     value={budgetForm.allocated}
                     onChange={(e) => setBudgetForm({ ...budgetForm, allocated: e.target.value })}
